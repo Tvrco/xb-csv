@@ -72,6 +72,17 @@ def _available_files():
     return sorted(names)
 
 
+def _available_headers():
+    headers = set()
+    for filename in _available_files():
+        try:
+            file_headers, _ = _read_csv(_csv_path(filename))
+            headers.update(file_headers)
+        except (OSError, ValueError):
+            continue
+    return sorted(headers)
+
+
 async def upload_csv(request):
     reader = await request.multipart()
     field = await reader.next()
@@ -125,11 +136,12 @@ class XBCSV:
     @classmethod
     def INPUT_TYPES(cls, **kwargs):
         files = _available_files() or ["请先上传 CSV"]
+        headers = _available_headers() or ["请先选择 CSV"]
         return {
             "required": {
                 "csv_file": (files, {"default": files[0]}),
-                "column": (["请先选择 CSV"], {"default": "请先选择 CSV"}),
-                "column_2": (["请先选择 CSV"], {"default": "请先选择 CSV"}),
+                "column": (headers, {"default": headers[0]}),
+                "column_2": (headers, {"default": headers[min(1, len(headers) - 1)]}),
                 "row_count": ("INT", {"default": 1, "min": 1, "max": 9999, "step": 1}),
                 "start_row": ("INT", {"default": 1, "min": 1, "max": 999999, "step": 1}),
             }
