@@ -10,6 +10,7 @@ import folder_paths
 
 NODE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = Path(folder_paths.get_input_directory()) / "xb_csv"
+LEGACY_UPLOAD_DIR = Path(folder_paths.get_input_directory()) / "pjh_csv"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -28,6 +29,10 @@ def _csv_path(name: str) -> Path:
     path = (UPLOAD_DIR / clean).resolve()
     if path.parent != UPLOAD_DIR.resolve():
         raise ValueError("Invalid CSV filename")
+    if not path.is_file():
+        legacy_path = (LEGACY_UPLOAD_DIR / clean).resolve()
+        if legacy_path.parent == LEGACY_UPLOAD_DIR.resolve() and legacy_path.is_file():
+            return legacy_path
     return path
 
 
@@ -62,7 +67,9 @@ def _read_csv(path: Path):
 
 
 def _available_files():
-    return sorted(p.name for p in UPLOAD_DIR.glob("*.csv"))
+    names = {p.name for p in UPLOAD_DIR.glob("*.csv")}
+    names.update(p.name for p in LEGACY_UPLOAD_DIR.glob("*.csv"))
+    return sorted(names)
 
 
 async def upload_csv(request):
